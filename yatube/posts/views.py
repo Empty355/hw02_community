@@ -3,7 +3,7 @@ from django.shortcuts import render, get_object_or_404
 
 
 def index(request):
-    posts = Post.objects.order_by('-pub_date')[:10]
+    posts = Post.objects.select_related('-pub_date')[:10]
     context = {
         'posts': posts,
     }

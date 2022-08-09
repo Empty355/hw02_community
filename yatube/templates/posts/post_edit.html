@@ -9,8 +9,8 @@
           Новый пост
         </div>
         <div class="card-body">
-          <form method="post">
-            <div class="form-group row my-3 p-3">
+          <form method="post"> {% csrf_token %}
+              <div class="form-group row my-3 p-3">
               <label for="id_text"> 
                 Текст поста <span class="required text-danger">*</span> 
               </label>
@@ -27,7 +27,11 @@
               </small>
             </div>
             <p class="float-right"><button type="submit" class="btn btn-primary"> 
-                Сохранить
+              {% if is_edit %}
+              Сохранить
+              {% else %}
+              Добавить
+              {% endif %}
             </button>
           </form>
         </div>

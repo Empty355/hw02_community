@@ -1,13 +1,14 @@
 from django.core.paginator import Paginator
-from .models import Post, Group, User
+from posts.models import Post, Group, User
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
-from .forms import PostForm
+from posts.forms import PostForm
+from yatube.settings import LIST_OBJECTS
 
 
 def index(request):
-    post_list = Post.objects.all().order_by('-pub_date')
-    paginator = Paginator(post_list, 10)
+    post_list = Post.objects.all().select_related("group", "author")
+    paginator = Paginator(post_list, LIST_OBJECTS)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
@@ -18,13 +19,13 @@ def index(request):
 
 def group_posts(request, slug):
     group = get_object_or_404(Group, slug=slug)
-    title = group.title
-    group_list = Post.objects.filter(group=group).order_by('-pub_date')
-    paginator = Paginator(group_list, 10)
+    group_list = Post.objects.filter(group=group).select_related(
+        "group", "author"
+    )
+    paginator = Paginator(group_list, LIST_OBJECTS)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
-        'title': title,
         'page_obj': page_obj,
         'group': group,
     }
@@ -34,13 +35,13 @@ def group_posts(request, slug):
 def profile(request, username):
     user = get_object_or_404(User, username=username)
     posts_list = user.posts.select_related("group", "author")
-    all_user_posts = posts_list.count()
-    paginator = Paginator(posts_list, 10)
+    posts_numbers = posts_list.count()
+    paginator = Paginator(posts_list, LIST_OBJECTS)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
         "author": user,
-        "all_user_posts": all_user_posts,
+        "posts_numbers": posts_numbers,
         "page_obj": page_obj,
     }
     return render(request, 'posts/profile.html', context)
@@ -61,8 +62,6 @@ def post_create(request):
     if request.method == 'POST':
         form = PostForm(request.POST)
         if form.is_valid():
-            post = form.cleaned_data['text']
-            post = form.cleaned_data['group']
             post = form.save(commit=False)
             post.author = request.user
             post.save()
